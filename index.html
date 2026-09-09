@@ -12,20 +12,9 @@ content="width=device-width, initial-scale=1.0"
 
 >
 
-  <title>PIZZA'S QUEEN - Escáner</title>
-
-  <!-- ZXing -->
-
-  <script
-    src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"
-  ></script>
+  <title>Prueba cámara PIZZA'S QUEEN</title>
 
   <style>
-
-    * {
-      box-sizing: border-box;
-    }
-
 
     body {
       margin: 0;
@@ -36,83 +25,34 @@ content="width=device-width, initial-scale=1.0"
       text-align: center;
     }
 
-
-    h1 {
-      margin-bottom: 8px;
-    }
-
-
-    p {
-      color: #ccc;
-    }
-
-
     .contenedor {
-      width: 100%;
       max-width: 600px;
       margin: auto;
     }
 
-
     button {
       width: 100%;
       padding: 15px;
-      margin-top: 12px;
+      margin-top: 15px;
       border: none;
       border-radius: 10px;
       font-size: 17px;
       font-weight: bold;
-      cursor: pointer;
     }
-
-
-    #btnAbrir {
-      background: white;
-      color: black;
-    }
-
-
-    #btnDetener {
-      background: #8b0000;
-      color: white;
-      display: none;
-    }
-
 
     #video {
       width: 100%;
       margin-top: 20px;
-      border-radius: 12px;
       background: black;
-      display: none;
+      border-radius: 12px;
     }
-
 
     #estado {
       margin-top: 20px;
       padding: 15px;
-      border-radius: 10px;
       background: #292929;
+      border-radius: 10px;
       white-space: pre-line;
-      word-break: break-word;
-    }
-
-
-    .codigo {
-      margin-top: 20px;
-      padding: 20px;
-      background: #17351f;
-      border: 1px solid #28663a;
-      border-radius: 12px;
-      display: none;
-    }
-
-
-    .codigoNumero {
-      font-size: 26px;
-      font-weight: bold;
-      margin-top: 10px;
-      word-break: break-all;
     }
 
   </style>
@@ -126,29 +66,14 @@ content="width=device-width, initial-scale=1.0"
 ```
 <h1>📷 PIZZA'S QUEEN</h1>
 
-
-<p>
-  Escáner de código de barras
-</p>
-
+<p>Prueba directa de cámara</p>
 
 <button
-  id="btnAbrir"
   type="button"
-  onclick="abrirCamara()"
+  onclick="probarCamara()"
 >
   📷 ABRIR CÁMARA
 </button>
-
-
-<button
-  id="btnDetener"
-  type="button"
-  onclick="detenerCamara()"
->
-  ⏹ DETENER CÁMARA
-</button>
-
 
 <video
   id="video"
@@ -157,27 +82,8 @@ content="width=device-width, initial-scale=1.0"
   playsinline
 ></video>
 
-
 <div id="estado">
-  Esperando para iniciar la cámara...
-</div>
-
-
-<div
-  id="resultado"
-  class="codigo"
->
-
-  <div>
-    ✅ CÓDIGO DETECTADO
-  </div>
-
-
-  <div
-    id="codigoNumero"
-    class="codigoNumero"
-  ></div>
-
+  Esperando...
 </div>
 ```
 
@@ -185,556 +91,65 @@ content="width=device-width, initial-scale=1.0"
 
 <script>
 
+async function probarCamara() {
 
-  var lector =
-    null;
+  var video =
+    document.getElementById("video");
 
+  var estado =
+    document.getElementById("estado");
 
-  var escaneando =
-    false;
+  try {
 
+    estado.textContent =
+      "📷 Solicitando cámara...";
 
-  var codigoAnterior =
-    "";
+    var stream =
+      await navigator.mediaDevices.getUserMedia({
 
+        video: true,
 
-  function mostrarEstado(texto) {
+        audio: false
 
-    document
-      .getElementById("estado")
-      .textContent =
-        texto;
+      });
 
-  }
 
+    video.srcObject =
+      stream;
 
-  function abrirCamara() {
 
-try {
+    video.muted =
+      true;
 
-```
-mostrarEstado(
-  "📷 Iniciando cámara...\n\n" +
-  "Apunta hacia el código de barras."
-);
 
-
-if (
-  typeof ZXing === "undefined"
-) {
-
-  mostrarEstado(
-    "❌ No se pudo cargar el lector de códigos ZXing."
-  );
-
-  return;
-
-}
-
-
-detenerCamara();
-
-
-lector =
-  new ZXing.BrowserMultiFormatReader();
-
-
-escaneando =
-  true;
-
-
-document.getElementById(
-  "btnAbrir"
-).style.display =
-  "none";
-
-
-document.getElementById(
-  "btnDetener"
-).style.display =
-  "block";
-
-
-var video =
-  document.getElementById(
-    "video"
-  );
-
-
-video.style.display =
-  "block";
-
-
-mostrarEstado(
-  "📷 Activando cámara...\n\n" +
-  "Apunta hacia el código de barras."
-);
-
-
-lector.decodeFromVideoDevice(
-
-  null,
-
-  video,
-
-  function(
-    resultado,
-    error,
-    controles
-  ) {
-
-    if (!escaneando) {
-
-      if (controles) {
-
-        controles.stop();
-
-      }
-
-      return;
-
-    }
-
-
-    if (resultado) {
-
-      var codigo =
-        resultado.getText();
-
-
-      if (!codigo) {
-
-        return;
-
-      }
-
-
-      codigo =
-        String(
-          codigo
-        ).trim();
-
-
-      if (
-        !codigo ||
-        codigo === codigoAnterior
-      ) {
-
-        return;
-
-      }
-
-
-      codigoAnterior =
-        codigo;
-
-
-      if (controles) {
-
-        controles.stop();
-
-      }
-
-
-      mostrarCodigo(
-        codigo
-      );
-
-
-      detenerCamara();
-
-    }
-
-  }
-
-).then(
-
-  function() {
-
-    mostrarEstado(
-      "✅ Cámara activada.\n\n" +
-      "Apunta hacia el código de barras."
-    );
-
-  }
-
-).catch(
-
-  function(error) {
-
-    console.error(
-      "Error ZXing:",
-      error
+    video.setAttribute(
+      "playsinline",
+      ""
     );
 
 
-    mostrarEstado(
+    await video.play();
 
-      "❌ No se pudo iniciar la cámara.\n\n" +
 
-      "Error: " +
-      (
-        error.message ||
-        error.name ||
-        "Error desconocido"
-      )
+    estado.textContent =
+      "✅ CÁMARA ACTIVADA.\n\n" +
+      "Si ves tu imagen arriba, GitHub Pages puede mostrar la cámara correctamente.";
 
-    );
+  } catch (error) {
 
-
-    detenerCamara();
-
-  }
-
-);
-```
-
-} catch (error) {
-
-```
-console.error(
-  "Error iniciando cámara:",
-  error
-);
-
-
-mostrarEstado(
-
-  "❌ NO SE PUDO INICIAR LA CÁMARA.\n\n" +
-
-  "Error: " +
-  (
-    error.message ||
-    error.name ||
-    "Error desconocido"
-  )
-
-);
-
-
-detenerCamara();
-```
-
-}
-
-}
-
-
-
-      detenerCamara();
-
-
-      lector =
-        new ZXing.BrowserMultiFormatReader();
-
-
-      escaneando =
-        true;
-
-
-      document.getElementById(
-        "btnAbrir"
-      ).style.display =
-        "none";
-
-
-      document.getElementById(
-        "btnDetener"
-      ).style.display =
-        "block";
-
-
-      document.getElementById(
-        "video"
-      ).style.display =
-        "block";
-
-
-      mostrarEstado(
-        "📷 Cámara activándose...\n\n" +
-        "Apunta hacia el código de barras."
-      );
-
-
-      lector.decodeFromConstraints(
-
-        {
-
-          video: {
-
-            facingMode: {
-              ideal: "environment"
-            }
-
-          },
-
-          audio: false
-
-        },
-
-        "video",
-
-        function(
-          resultado,
-          error
-        ) {
-
-          if (!escaneando) {
-
-            return;
-
-          }
-
-
-          if (resultado) {
-
-            var codigo =
-              resultado.getText();
-
-
-            if (!codigo) {
-
-              return;
-
-            }
-
-
-            codigo =
-              String(
-                codigo
-              ).trim();
-
-
-            if (
-              !codigo ||
-              codigo === codigoAnterior
-            ) {
-
-              return;
-
-            }
-
-
-            codigoAnterior =
-              codigo;
-
-
-            mostrarCodigo(
-              codigo
-            );
-
-
-            detenerCamara();
-
-          }
-
-        }
-
-      );
-
-    } catch (error) {
-
-      console.error(
-        "Error iniciando cámara:",
-        error
-      );
-
-
-      mostrarEstado(
-
-        "❌ NO SE PUDO INICIAR LA CÁMARA.\n\n" +
-
-        "Nombre del error: " +
-        (
-          error.name ||
-          "Error"
-        ) +
-
-        "\n\n" +
-
-        "Mensaje: " +
-        (
-          error.message ||
-          "No se pudo iniciar el lector."
-        )
-
-      );
-
-
-      detenerCamara();
-
-    }
-
-  }
-
-
-  function mostrarCodigo(
-    codigo
-  ) {
-
-    document
-      .getElementById(
-        "codigoNumero"
-      )
-      .textContent =
-        codigo;
-
-
-    document
-      .getElementById(
-        "resultado"
-      )
-      .style.display =
-        "block";
-
-
-    mostrarEstado(
-
-      "✅ Código detectado correctamente.\n\n" +
-
-      "Código: " +
-      codigo +
-
+    estado.textContent =
+      "❌ ERROR\n\n" +
+      "Nombre: " +
+      error.name +
       "\n\n" +
+      "Mensaje: " +
+      error.message;
 
-      "Regresando a PIZZA'S QUEEN..."
-
-    );
-
-
-    var parametros =
-      new URLSearchParams(
-        window.location.search
-      );
-
-
-    var urlRegreso =
-      parametros.get(
-        "return"
-      );
-
-
-    if (!urlRegreso) {
-
-      return;
-
-    }
-
-
-    var separador =
-      urlRegreso.indexOf("?") >= 0
-        ? "&"
-        : "?";
-
-
-    var destino =
-      urlRegreso +
-      separador +
-      "codigo=" +
-      encodeURIComponent(
-        codigo
-      );
-
-
-    setTimeout(
-      function() {
-
-        window.location.href =
-          destino;
-
-      },
-      800
-    );
+    console.error(error);
 
   }
 
-
-  function detenerCamara() {
-
-    escaneando =
-      false;
-
-
-    if (lector) {
-
-      try {
-
-        lector.reset();
-
-      } catch (error) {
-
-        console.log(
-          "Error cerrando lector:",
-          error
-        );
-
-      }
-
-      lector =
-        null;
-
-    }
-
-
-    var video =
-      document.getElementById(
-        "video"
-      );
-
-
-    if (video) {
-
-      try {
-
-        if (
-          video.srcObject
-        ) {
-
-          video.srcObject
-            .getTracks()
-            .forEach(
-              function(track) {
-
-                track.stop();
-
-              }
-            );
-
-        }
-
-      } catch (error) {
-
-        console.log(
-          "Error cerrando cámara:",
-          error
-        );
-
-      }
-
-
-      video.pause();
-
-      video.srcObject =
-        null;
-
-      video.style.display =
-        "none";
-
-    }
-
-
-    document.getElementById(
-      "btnDetener"
-    ).style.display =
-      "none";
-
-
-    document.getElementById(
-      "btnAbrir"
-    ).style.display =
-      "block";
-
-  }
+}
 
 </script>
 
