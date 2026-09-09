@@ -391,36 +391,55 @@
 
   function mostrarCodigo(codigo) {
 
+  document.getElementById(
+    "codigoNumero"
+  ).textContent = codigo;
 
-    document.getElementById(
-      "codigoNumero"
-    ).textContent = codigo;
+  document.getElementById(
+    "resultado"
+  ).style.display = "block";
 
+  mostrarEstado(
+    "✅ Código detectado correctamente.\n\n" +
+    "Regresando a PIZZA'S QUEEN..."
+  );
 
-    document.getElementById(
-      "resultado"
-    ).style.display = "block";
-
-
-    mostrarEstado(
-
-      "✅ Código detectado correctamente."
-
+  var parametros =
+    new URLSearchParams(
+      window.location.search
     );
 
+  var urlRegreso =
+    parametros.get("return");
 
-    /*
-      MÁS ADELANTE AQUÍ CONECTAREMOS
-      EL CÓDIGO CON PIZZA'S QUEEN.
+  if (!urlRegreso) {
 
-      Ejemplo:
+    mostrarEstado(
+      "✅ Código detectado correctamente.\n\n" +
+      "Código: " + codigo
+    );
 
-      código → Apps Script
-      → buscar producto
-      → devolver producto
-    */
-
+    return;
   }
+
+  var separador =
+    urlRegreso.indexOf("?") >= 0
+      ? "&"
+      : "?";
+
+  var destino =
+    urlRegreso +
+    separador +
+    "codigo=" +
+    encodeURIComponent(codigo);
+
+  setTimeout(function() {
+
+    window.location.href = destino;
+
+  }, 800);
+
+}
 
 
   function detenerCamara() {
