@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>PIZZA'S QUEEN - Escáner</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+    }
+
+    p {
+      color: #ccc;
+    }
+
+    .contenedor {
+      width: 100%;
+      max-width: 600px;
+      margin: auto;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      margin-top: 12px;
+      border: none;
+      border-radius: 10px;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #btnAbrir {
+      background: white;
+      color: black;
+    }
+
+    #btnDetener {
+      background: #8b0000;
+      color: white;
+      display: none;
+    }
+
+    #video {
+      width: 100%;
+      margin-top: 20px;
+      border-radius: 12px;
+      background: black;
+      display: none;
+    }
+
+    #estado {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 10px;
+      background: #292929;
+      white-space: pre-line;
+      word-break: break-word;
+    }
+
+    .codigo {
+      margin-top: 20px;
+      padding: 20px;
+      background: #17351f;
+      border: 1px solid #28663a;
+      border-radius: 12px;
+      display: none;
+    }
+
+    .codigoNumero {
+      font-size: 26px;
+      font-weight: bold;
+      margin-top: 10px;
+      word-break: break-all;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="contenedor">
+
+    <h1>📷 PIZZA'S QUEEN</h1>
+
+    <p>
+      Escáner de código de barras
+    </p>
+
+    <button
+      id="btnAbrir"
+      onclick="abrirCamara()"
+    >
+      📷 ABRIR CÁMARA
+    </button>
+
+    <button
+      id="btnDetener"
+      onclick="detenerCamara()"
+    >
+      ⏹ DETENER CÁMARA
+    </button>
+
+    <video
+      id="video"
+      autoplay
+      muted
+      playsinline
+    ></video>
+
+    <div id="estado">
+      Esperando para iniciar la cámara...
+    </div>
+
+    <div
+      id="resultado"
+      class="codigo"
+    >
+
+      <div>
+        ✅ CÓDIGO DETECTADO
+      </div>
+
+      <div
+        id="codigoNumero"
+        class="codigoNumero"
+      ></div>
+
+    </div>
+
+  </div>
+
+
+<script>
+
+  var stream = null;
+
+  var detector = null;
+
+  var escaneando = false;
+
+
+  function mostrarEstado(texto) {
+
+    document.getElementById("estado").textContent = texto;
+
+  }
+
+
+  async function abrirCamara() {
+
+    try {
+
+      mostrarEstado(
+        "📷 Solicitando permiso para utilizar la cámara..."
+      );
+
+
+      if (
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia
+      ) {
+
+        mostrarEstado(
+          "❌ Este navegador no permite utilizar la cámara."
+        );
+
+        return;
+
+      }
+
+
+      detenerCamara();
+
+
+      stream =
+        await navigator.mediaDevices.getUserMedia({
+
+          video: {
+
+            facingMode: {
+              ideal: "environment"
+            }
+
+          },
+
+          audio: false
+
+        });
+
+
+      var video =
+        document.getElementById("video");
+
+
+      video.srcObject = stream;
+
+      video.style.display = "block";
+
+
+      document.getElementById(
+        "btnAbrir"
+      ).style.display = "none";
+
+
+      document.getElementById(
+        "btnDetener"
+      ).style.display = "block";
+
+
+      mostrarEstado(
+        "✅ Cámara activada.\n\n" +
+        "Apunta la cámara hacia un código de barras."
+      );
+
+
+      await video.play();
+
+
+      iniciarDetector(video);
+
+
+    } catch (error) {
+
+      console.error(error);
+
+
+      mostrarEstado(
+
+        "❌ NO SE PUDO ACCEDER A LA CÁMARA.\n\n" +
+
+        "Nombre del error: " +
+        error.name +
+
+        "\n\n" +
+
+        "Mensaje: " +
+        error.message
+
+      );
+
+    }
+
+  }
+
+
+  function iniciarDetector(video) {
+
+
+    if (
+      !("BarcodeDetector" in window)
+    ) {
+
+      mostrarEstado(
+
+        "⚠️ La cámara funciona, " +
+        "pero este navegador no tiene " +
+        "BarcodeDetector.\n\n" +
+
+        "Vamos a agregar un lector compatible " +
+        "en el siguiente paso."
+
+      );
+
+      return;
+
+    }
+
+
+    try {
+
+      detector =
+        new BarcodeDetector({
+
+          formats: [
+
+            "code_128",
+            "ean_13",
+            "ean_8",
+            "upc_a",
+            "upc_e"
+
+          ]
+
+        });
+
+
+      escaneando = true;
+
+
+      buscarCodigo(video);
+
+
+    } catch (error) {
+
+      mostrarEstado(
+
+        "⚠️ La cámara funciona, " +
+        "pero no se pudo iniciar " +
+        "el detector de códigos."
+
+      );
+
+      console.error(error);
+
+    }
+
+  }
+
+
+  async function buscarCodigo(video) {
+
+
+    if (!escaneando) {
+      return;
+    }
+
+
+    try {
+
+      var resultados =
+        await detector.detect(video);
+
+
+      if (
+        resultados &&
+        resultados.length > 0
+      ) {
+
+        var codigo =
+          resultados[0].rawValue;
+
+
+        if (codigo) {
+
+          codigo =
+            String(codigo).trim();
+
+
+          mostrarCodigo(codigo);
+
+
+          detenerCamara();
+
+
+          return;
+
+        }
+
+      }
+
+    } catch (error) {
+
+      console.log(
+        "Error detectando:",
+        error
+      );
+
+    }
+
+
+    if (escaneando) {
+
+      requestAnimationFrame(
+        function() {
+
+          buscarCodigo(video);
+
+        }
+      );
+
+    }
+
+  }
+
+
+  function mostrarCodigo(codigo) {
+
+
+    document.getElementById(
+      "codigoNumero"
+    ).textContent = codigo;
+
+
+    document.getElementById(
+      "resultado"
+    ).style.display = "block";
+
+
+    mostrarEstado(
+
+      "✅ Código detectado correctamente."
+
+    );
+
+
+    /*
+      MÁS ADELANTE AQUÍ CONECTAREMOS
+      EL CÓDIGO CON PIZZA'S QUEEN.
+
+      Ejemplo:
+
+      código → Apps Script
+      → buscar producto
+      → devolver producto
+    */
+
+  }
+
+
+  function detenerCamara() {
+
+
+    escaneando = false;
+
+
+    if (stream) {
+
+      stream
+        .getTracks()
+        .forEach(function(track) {
+
+          track.stop();
+
+        });
+
+      stream = null;
+
+    }
+
+
+    var video =
+      document.getElementById("video");
+
+
+    if (video) {
+
+      video.pause();
+
+      video.srcObject = null;
+
+      video.style.display = "none";
+
+    }
+
+
+    document.getElementById(
+      "btnDetener"
+    ).style.display = "none";
+
+
+    document.getElementById(
+      "btnAbrir"
+    ).style.display = "block";
+
+  }
+
+</script>
+
+</body>
+
+</html>
