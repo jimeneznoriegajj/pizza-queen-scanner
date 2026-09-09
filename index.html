@@ -210,25 +210,215 @@ content="width=device-width, initial-scale=1.0"
 
   function abrirCamara() {
 
-    try {
+try {
 
-      mostrarEstado(
-        "📷 Iniciando cámara...\n\n" +
-        "Si Chrome solicita permiso, selecciona PERMITIR."
-      );
+```
+mostrarEstado(
+  "📷 Iniciando cámara...\n\n" +
+  "Apunta hacia el código de barras."
+);
 
 
-      if (
-        typeof ZXing === "undefined"
-      ) {
+if (
+  typeof ZXing === "undefined"
+) {
 
-        mostrarEstado(
-          "❌ No se pudo cargar el lector de códigos ZXing."
-        );
+  mostrarEstado(
+    "❌ No se pudo cargar el lector de códigos ZXing."
+  );
+
+  return;
+
+}
+
+
+detenerCamara();
+
+
+lector =
+  new ZXing.BrowserMultiFormatReader();
+
+
+escaneando =
+  true;
+
+
+document.getElementById(
+  "btnAbrir"
+).style.display =
+  "none";
+
+
+document.getElementById(
+  "btnDetener"
+).style.display =
+  "block";
+
+
+var video =
+  document.getElementById(
+    "video"
+  );
+
+
+video.style.display =
+  "block";
+
+
+mostrarEstado(
+  "📷 Activando cámara...\n\n" +
+  "Apunta hacia el código de barras."
+);
+
+
+lector.decodeFromVideoDevice(
+
+  null,
+
+  video,
+
+  function(
+    resultado,
+    error,
+    controles
+  ) {
+
+    if (!escaneando) {
+
+      if (controles) {
+
+        controles.stop();
+
+      }
+
+      return;
+
+    }
+
+
+    if (resultado) {
+
+      var codigo =
+        resultado.getText();
+
+
+      if (!codigo) {
 
         return;
 
       }
+
+
+      codigo =
+        String(
+          codigo
+        ).trim();
+
+
+      if (
+        !codigo ||
+        codigo === codigoAnterior
+      ) {
+
+        return;
+
+      }
+
+
+      codigoAnterior =
+        codigo;
+
+
+      if (controles) {
+
+        controles.stop();
+
+      }
+
+
+      mostrarCodigo(
+        codigo
+      );
+
+
+      detenerCamara();
+
+    }
+
+  }
+
+).then(
+
+  function() {
+
+    mostrarEstado(
+      "✅ Cámara activada.\n\n" +
+      "Apunta hacia el código de barras."
+    );
+
+  }
+
+).catch(
+
+  function(error) {
+
+    console.error(
+      "Error ZXing:",
+      error
+    );
+
+
+    mostrarEstado(
+
+      "❌ No se pudo iniciar la cámara.\n\n" +
+
+      "Error: " +
+      (
+        error.message ||
+        error.name ||
+        "Error desconocido"
+      )
+
+    );
+
+
+    detenerCamara();
+
+  }
+
+);
+```
+
+} catch (error) {
+
+```
+console.error(
+  "Error iniciando cámara:",
+  error
+);
+
+
+mostrarEstado(
+
+  "❌ NO SE PUDO INICIAR LA CÁMARA.\n\n" +
+
+  "Error: " +
+  (
+    error.message ||
+    error.name ||
+    "Error desconocido"
+  )
+
+);
+
+
+detenerCamara();
+```
+
+}
+
+}
+
 
 
       detenerCamara();
