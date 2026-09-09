@@ -12,9 +12,18 @@ content="width=device-width, initial-scale=1.0"
 
 >
 
-  <title>Prueba cámara PIZZA'S QUEEN</title>
+  <title>PIZZA'S QUEEN - Escáner</title>
+
+  <script
+    src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"
+  ></script>
 
   <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
 
     body {
       margin: 0;
@@ -25,34 +34,83 @@ content="width=device-width, initial-scale=1.0"
       text-align: center;
     }
 
+
     .contenedor {
+      width: 100%;
       max-width: 600px;
       margin: auto;
     }
 
+
+    h1 {
+      margin-bottom: 8px;
+    }
+
+
+    p {
+      color: #ccc;
+    }
+
+
     button {
       width: 100%;
       padding: 15px;
-      margin-top: 15px;
+      margin-top: 12px;
       border: none;
       border-radius: 10px;
       font-size: 17px;
       font-weight: bold;
+      cursor: pointer;
     }
+
+
+    #btnAbrir {
+      background: white;
+      color: black;
+    }
+
+
+    #btnDetener {
+      background: #8b0000;
+      color: white;
+      display: none;
+    }
+
 
     #video {
       width: 100%;
       margin-top: 20px;
-      background: black;
       border-radius: 12px;
+      background: black;
+      display: none;
     }
+
 
     #estado {
       margin-top: 20px;
       padding: 15px;
-      background: #292929;
       border-radius: 10px;
+      background: #292929;
       white-space: pre-line;
+      word-break: break-word;
+    }
+
+
+    .codigo {
+      margin-top: 20px;
+      padding: 20px;
+      background: #17351f;
+      border: 1px solid #28663a;
+      border-radius: 12px;
+      display: none;
+    }
+
+
+    .codigoNumero {
+      font-size: 26px;
+      font-weight: bold;
+      margin-top: 10px;
+      word-break: break-all;
     }
 
   </style>
@@ -66,14 +124,29 @@ content="width=device-width, initial-scale=1.0"
 ```
 <h1>📷 PIZZA'S QUEEN</h1>
 
-<p>Prueba directa de cámara</p>
+
+<p>
+  Escáner de código de barras
+</p>
+
 
 <button
+  id="btnAbrir"
   type="button"
-  onclick="probarCamara()"
+  onclick="abrirCamara()"
 >
   📷 ABRIR CÁMARA
 </button>
+
+
+<button
+  id="btnDetener"
+  type="button"
+  onclick="detenerCamara()"
+>
+  ⏹ DETENER CÁMARA
+</button>
+
 
 <video
   id="video"
@@ -82,8 +155,27 @@ content="width=device-width, initial-scale=1.0"
   playsinline
 ></video>
 
+
 <div id="estado">
-  Esperando...
+  Esperando para iniciar la cámara...
+</div>
+
+
+<div
+  id="resultado"
+  class="codigo"
+>
+
+  <div>
+    ✅ CÓDIGO DETECTADO
+  </div>
+
+
+  <div
+    id="codigoNumero"
+    class="codigoNumero"
+  ></div>
+
 </div>
 ```
 
@@ -91,65 +183,568 @@ content="width=device-width, initial-scale=1.0"
 
 <script>
 
-async function probarCamara() {
 
-  var video =
-    document.getElementById("video");
-
-  var estado =
-    document.getElementById("estado");
-
-  try {
-
-    estado.textContent =
-      "📷 Solicitando cámara...";
-
-    var stream =
-      await navigator.mediaDevices.getUserMedia({
-
-        video: true,
-
-        audio: false
-
-      });
+  var stream =
+    null;
 
 
-    video.srcObject =
-      stream;
+  var lector =
+    null;
 
 
-    video.muted =
-      true;
+  var escaneando =
+    false;
 
 
-    video.setAttribute(
-      "playsinline",
-      ""
-    );
+  var codigoAnterior =
+    "";
 
 
-    await video.play();
+  function mostrarEstado(
+    texto
+  ) {
 
-
-    estado.textContent =
-      "✅ CÁMARA ACTIVADA.\n\n" +
-      "Si ves tu imagen arriba, GitHub Pages puede mostrar la cámara correctamente.";
-
-  } catch (error) {
-
-    estado.textContent =
-      "❌ ERROR\n\n" +
-      "Nombre: " +
-      error.name +
-      "\n\n" +
-      "Mensaje: " +
-      error.message;
-
-    console.error(error);
+    document
+      .getElementById(
+        "estado"
+      )
+      .textContent =
+        texto;
 
   }
 
-}
+
+  async function abrirCamara() {
+
+    try {
+
+      detenerCamara();
+
+
+      mostrarEstado(
+        "📷 Solicitando permiso para utilizar la cámara..."
+      );
+
+
+      if (
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia
+      ) {
+
+        mostrarEstado(
+          "❌ Este navegador no permite utilizar la cámara."
+        );
+
+        return;
+
+      }
+
+
+      /*
+       * PRIMERO abrimos la cámara directamente.
+       * Este método ya comprobamos que funciona.
+       */
+
+      stream =
+        await navigator.mediaDevices.getUserMedia({
+
+          video: {
+
+            facingMode: {
+              ideal: "environment"
+            }
+
+          },
+
+          audio: false
+
+        });
+
+
+      var video =
+        document.getElementById(
+          "video"
+        );
+
+
+      video.srcObject =
+        stream;
+
+
+      video.muted =
+        true;
+
+
+      video.setAttribute(
+        "playsinline",
+        ""
+      );
+
+
+      video.style.display =
+        "block";
+
+
+      await video.play();
+
+
+      document.getElementById(
+        "btnAbrir"
+      ).style.display =
+        "none";
+
+
+      document.getElementById(
+        "btnDetener"
+      ).style.display =
+        "block";
+
+
+      mostrarEstado(
+        "✅ Cámara activada.\n\n" +
+        "Apunta la cámara hacia un código de barras."
+      );
+
+
+      /*
+       * AHORA ZXing solamente lee
+       * el video que ya está funcionando.
+       */
+
+      if (
+        typeof ZXing === "undefined"
+      ) {
+
+        mostrarEstado(
+          "⚠️ La cámara funciona, pero no se pudo cargar ZXing."
+        );
+
+        return;
+
+      }
+
+
+      lector =
+        new ZXing.MultiFormatReader();
+
+
+      var pistas =
+        lector.getHints();
+
+
+      escaneando =
+        true;
+
+
+      escanearVideo(
+        video
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Error cámara:",
+        error
+      );
+
+
+      mostrarEstado(
+
+        "❌ NO SE PUDO ACCEDER A LA CÁMARA.\n\n" +
+
+        "Nombre del error: " +
+        (
+          error.name ||
+          "Error"
+        ) +
+
+        "\n\n" +
+
+        "Mensaje: " +
+        (
+          error.message ||
+          "Error desconocido"
+        )
+
+      );
+
+
+      detenerCamara();
+
+    }
+
+  }
+
+
+  function escanearVideo(
+    video
+  ) {
+
+    if (
+      !escaneando
+    ) {
+
+      return;
+
+    }
+
+
+    if (
+      !lector
+    ) {
+
+      return;
+
+    }
+
+
+    /*
+     * ZXing necesita una imagen.
+     * Creamos un canvas oculto y tomamos
+     * fotogramas del video.
+     */
+
+    var canvas =
+      document.createElement(
+        "canvas"
+      );
+
+
+    var contexto =
+      canvas.getContext(
+        "2d"
+      );
+
+
+    function analizar() {
+
+      if (
+        !escaneando
+      ) {
+
+        return;
+
+      }
+
+
+      if (
+        video.readyState <
+        2
+      ) {
+
+        requestAnimationFrame(
+          analizar
+        );
+
+        return;
+
+      }
+
+
+      var ancho =
+        video.videoWidth;
+
+
+      var alto =
+        video.videoHeight;
+
+
+      if (
+        !ancho ||
+        !alto
+      ) {
+
+        requestAnimationFrame(
+          analizar
+        );
+
+        return;
+
+      }
+
+
+      canvas.width =
+        ancho;
+
+
+      canvas.height =
+        alto;
+
+
+      contexto.drawImage(
+        video,
+        0,
+        0,
+        ancho,
+        alto
+      );
+
+
+      try {
+
+        var imagen =
+          contexto.getImageData(
+            0,
+            0,
+            ancho,
+            alto
+          );
+
+
+        var fuente =
+          new ZXing.RGBLuminanceSource(
+            imagen.data,
+            ancho,
+            alto
+          );
+
+
+        var binario =
+          new ZXing.BinaryBitmap(
+            new ZXing.HybridBinarizer(
+              fuente
+            )
+          );
+
+
+        var resultado =
+          lector.decode(
+            binario
+          );
+
+
+        if (
+          resultado
+        ) {
+
+          var codigo =
+            resultado.getText();
+
+
+          if (
+            codigo
+          ) {
+
+            codigo =
+              String(
+                codigo
+              ).trim();
+
+
+            if (
+              codigo &&
+              codigo !== codigoAnterior
+            ) {
+
+              codigoAnterior =
+                codigo;
+
+
+              mostrarCodigo(
+                codigo
+              );
+
+
+              detenerCamara();
+
+
+              return;
+
+            }
+
+          }
+
+        }
+
+      } catch (error) {
+
+        /*
+         * No encontrar un código en un fotograma
+         * es normal. Continuamos buscando.
+         */
+
+      }
+
+
+      requestAnimationFrame(
+        analizar
+      );
+
+    }
+
+
+    analizar();
+
+  }
+
+
+  function mostrarCodigo(
+    codigo
+  ) {
+
+    document
+      .getElementById(
+        "codigoNumero"
+      )
+      .textContent =
+        codigo;
+
+
+    document
+      .getElementById(
+        "resultado"
+      )
+      .style.display =
+        "block";
+
+
+    mostrarEstado(
+
+      "✅ Código detectado correctamente.\n\n" +
+
+      "Código: " +
+      codigo +
+
+      "\n\n" +
+
+      "Regresando a PIZZA'S QUEEN..."
+
+    );
+
+
+    var parametros =
+      new URLSearchParams(
+        window.location.search
+      );
+
+
+    var urlRegreso =
+      parametros.get(
+        "return"
+      );
+
+
+    if (
+      !urlRegreso
+    ) {
+
+      return;
+
+    }
+
+
+    var separador =
+      urlRegreso.indexOf("?") >= 0
+        ? "&"
+        : "?";
+
+
+    var destino =
+      urlRegreso +
+      separador +
+      "codigo=" +
+      encodeURIComponent(
+        codigo
+      );
+
+
+    setTimeout(
+      function() {
+
+        window.location.href =
+          destino;
+
+      },
+      800
+    );
+
+  }
+
+
+  function detenerCamara() {
+
+    escaneando =
+      false;
+
+
+    if (
+      stream
+    ) {
+
+      stream
+        .getTracks()
+        .forEach(
+          function(track) {
+
+            track.stop();
+
+          }
+        );
+
+
+      stream =
+        null;
+
+    }
+
+
+    var video =
+      document.getElementById(
+        "video"
+      );
+
+
+    if (
+      video
+    ) {
+
+      video.pause();
+
+      video.srcObject =
+        null;
+
+      video.style.display =
+        "none";
+
+    }
+
+
+    lector =
+      null;
+
+
+    var btnDetener =
+      document.getElementById(
+        "btnDetener"
+      );
+
+
+    var btnAbrir =
+      document.getElementById(
+        "btnAbrir"
+      );
+
+
+    if (
+      btnDetener
+    ) {
+
+      btnDetener.style.display =
+        "none";
+
+    }
+
+
+    if (
+      btnAbrir
+    ) {
+
+      btnAbrir.style.display =
+        "block";
+
+    }
+
+  }
 
 </script>
 
