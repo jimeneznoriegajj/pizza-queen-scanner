@@ -14,6 +14,8 @@ content="width=device-width, initial-scale=1.0"
 
   <title>PIZZA'S QUEEN - Escáner</title>
 
+  <!-- LECTOR DE CÓDIGOS ZXING -->
+
   <script
     src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"
   ></script>
@@ -218,6 +220,12 @@ content="width=device-width, initial-scale=1.0"
 
     try {
 
+
+      /*
+       * Limpiamos cualquier cámara
+       * anterior.
+       */
+
       detenerCamara();
 
 
@@ -225,6 +233,11 @@ content="width=device-width, initial-scale=1.0"
         "📷 Solicitando permiso para utilizar la cámara..."
       );
 
+
+      /*
+       * Comprobamos que el navegador
+       * tenga acceso a getUserMedia.
+       */
 
       if (
         !navigator.mediaDevices ||
@@ -241,8 +254,10 @@ content="width=device-width, initial-scale=1.0"
 
 
       /*
-       * PRIMERO abrimos la cámara directamente.
-       * Este método ya comprobamos que funciona.
+       * ABRIMOS LA CÁMARA DIRECTAMENTE.
+       *
+       * Este método ya comprobamos que
+       * funciona correctamente en GitHub Pages.
        */
 
       stream =
@@ -267,6 +282,11 @@ content="width=device-width, initial-scale=1.0"
         );
 
 
+      /*
+       * Conectamos la cámara
+       * al elemento de video.
+       */
+
       video.srcObject =
         stream;
 
@@ -285,8 +305,17 @@ content="width=device-width, initial-scale=1.0"
         "block";
 
 
+      /*
+       * Esperamos a que el video
+       * comience realmente.
+       */
+
       await video.play();
 
+
+      /*
+       * Mostramos controles.
+       */
 
       document.getElementById(
         "btnAbrir"
@@ -307,8 +336,8 @@ content="width=device-width, initial-scale=1.0"
 
 
       /*
-       * AHORA ZXing solamente lee
-       * el video que ya está funcionando.
+       * Comprobamos que ZXing
+       * se haya cargado.
        */
 
       if (
@@ -324,21 +353,27 @@ content="width=device-width, initial-scale=1.0"
       }
 
 
+      /*
+       * Creamos el lector.
+       */
+
       lector =
         new ZXing.MultiFormatReader();
-
-
-      var pistas =
-        lector.getHints();
 
 
       escaneando =
         true;
 
 
+      /*
+       * Comenzamos a analizar
+       * la imagen del video.
+       */
+
       escanearVideo(
         video
       );
+
 
     } catch (error) {
 
@@ -380,6 +415,7 @@ content="width=device-width, initial-scale=1.0"
     video
   ) {
 
+
     if (
       !escaneando
     ) {
@@ -399,9 +435,10 @@ content="width=device-width, initial-scale=1.0"
 
 
     /*
-     * ZXing necesita una imagen.
-     * Creamos un canvas oculto y tomamos
-     * fotogramas del video.
+     * Creamos un canvas oculto.
+     *
+     * Cada fotograma de la cámara
+     * será copiado al canvas.
      */
 
     var canvas =
@@ -412,11 +449,15 @@ content="width=device-width, initial-scale=1.0"
 
     var contexto =
       canvas.getContext(
-        "2d"
+        "2d",
+        {
+          willReadFrequently: true
+        }
       );
 
 
     function analizar() {
+
 
       if (
         !escaneando
@@ -426,6 +467,11 @@ content="width=device-width, initial-scale=1.0"
 
       }
 
+
+      /*
+       * Esperamos a que el video
+       * tenga una imagen disponible.
+       */
 
       if (
         video.readyState <
@@ -463,6 +509,11 @@ content="width=device-width, initial-scale=1.0"
       }
 
 
+      /*
+       * Ajustamos el canvas
+       * al tamaño real de la cámara.
+       */
+
       canvas.width =
         ancho;
 
@@ -470,6 +521,10 @@ content="width=device-width, initial-scale=1.0"
       canvas.height =
         alto;
 
+
+      /*
+       * Copiamos el fotograma.
+       */
 
       contexto.drawImage(
         video,
@@ -482,6 +537,11 @@ content="width=device-width, initial-scale=1.0"
 
       try {
 
+
+        /*
+         * Obtenemos los píxeles.
+         */
+
         var imagen =
           contexto.getImageData(
             0,
@@ -490,6 +550,11 @@ content="width=device-width, initial-scale=1.0"
             alto
           );
 
+
+        /*
+         * Convertimos la imagen
+         * para ZXing.
+         */
 
         var fuente =
           new ZXing.RGBLuminanceSource(
@@ -507,6 +572,11 @@ content="width=device-width, initial-scale=1.0"
           );
 
 
+        /*
+         * Intentamos encontrar
+         * un código.
+         */
+
         var resultado =
           lector.decode(
             binario
@@ -517,6 +587,7 @@ content="width=device-width, initial-scale=1.0"
           resultado
         ) {
 
+
           var codigo =
             resultado.getText();
 
@@ -525,25 +596,40 @@ content="width=device-width, initial-scale=1.0"
             codigo
           ) {
 
+
             codigo =
               String(
                 codigo
               ).trim();
 
 
+            /*
+             * Evitamos detectar
+             * repetidamente el mismo código.
+             */
+
             if (
               codigo &&
               codigo !== codigoAnterior
             ) {
 
+
               codigoAnterior =
                 codigo;
 
+
+              /*
+               * Mostramos el código.
+               */
 
               mostrarCodigo(
                 codigo
               );
 
+
+              /*
+               * Cerramos la cámara.
+               */
 
               detenerCamara();
 
@@ -556,15 +642,26 @@ content="width=device-width, initial-scale=1.0"
 
         }
 
+
       } catch (error) {
 
         /*
-         * No encontrar un código en un fotograma
-         * es normal. Continuamos buscando.
+         * IMPORTANTE:
+         *
+         * ZXing lanza errores cuando
+         * simplemente NO encuentra un
+         * código en ese fotograma.
+         *
+         * Eso es completamente normal.
          */
 
       }
 
+
+      /*
+       * Continuamos analizando
+       * el siguiente fotograma.
+       */
 
       requestAnimationFrame(
         analizar
@@ -581,6 +678,7 @@ content="width=device-width, initial-scale=1.0"
   function mostrarCodigo(
     codigo
   ) {
+
 
     document
       .getElementById(
@@ -612,6 +710,11 @@ content="width=device-width, initial-scale=1.0"
     );
 
 
+    /*
+     * Recuperamos la URL de regreso
+     * enviada desde PIZZA'S QUEEN.
+     */
+
     var parametros =
       new URLSearchParams(
         window.location.search
@@ -624,6 +727,12 @@ content="width=device-width, initial-scale=1.0"
       );
 
 
+    /*
+     * Si la cámara fue abierta
+     * directamente, no existe
+     * URL de regreso.
+     */
+
     if (
       !urlRegreso
     ) {
@@ -633,11 +742,20 @@ content="width=device-width, initial-scale=1.0"
     }
 
 
+    /*
+     * Determinamos si la URL
+     * ya tiene parámetros.
+     */
+
     var separador =
       urlRegreso.indexOf("?") >= 0
         ? "&"
         : "?";
 
+
+    /*
+     * Agregamos el código detectado.
+     */
 
     var destino =
       urlRegreso +
@@ -647,6 +765,11 @@ content="width=device-width, initial-scale=1.0"
         codigo
       );
 
+
+    /*
+     * Regresamos automáticamente
+     * a PIZZA'S QUEEN.
+     */
 
     setTimeout(
       function() {
@@ -663,9 +786,15 @@ content="width=device-width, initial-scale=1.0"
 
   function detenerCamara() {
 
+
     escaneando =
       false;
 
+
+    /*
+     * Cerramos todos los tracks
+     * de la cámara.
+     */
 
     if (
       stream
@@ -688,6 +817,10 @@ content="width=device-width, initial-scale=1.0"
     }
 
 
+    /*
+     * Limpiamos el video.
+     */
+
     var video =
       document.getElementById(
         "video"
@@ -700,8 +833,10 @@ content="width=device-width, initial-scale=1.0"
 
       video.pause();
 
+
       video.srcObject =
         null;
+
 
       video.style.display =
         "none";
@@ -709,9 +844,17 @@ content="width=device-width, initial-scale=1.0"
     }
 
 
+    /*
+     * Eliminamos el lector.
+     */
+
     lector =
       null;
 
+
+    /*
+     * Restauramos botones.
+     */
 
     var btnDetener =
       document.getElementById(
@@ -745,6 +888,7 @@ content="width=device-width, initial-scale=1.0"
     }
 
   }
+
 
 </script>
 
