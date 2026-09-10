@@ -1,24 +1,28 @@
 <!DOCTYPE html>
-
 <html lang="es">
 
 <head>
 
   <meta charset="UTF-8">
 
-<meta
-name="viewport"
-content="width=device-width, initial-scale=1.0"
-
->
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
   <title>PIZZA'S QUEEN - Escáner</title>
 
-  <!-- LECTOR DE CÓDIGOS ZXING -->
+
+  <!--
+    LIBRERÍA ZXING PARA NAVEGADOR
+    Esta es la versión especializada
+    para lectura mediante cámara.
+  -->
 
   <script
-    src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"
+    src="https://unpkg.com/@zxing/browser@latest"
   ></script>
+
 
   <style>
 
@@ -28,179 +32,326 @@ content="width=device-width, initial-scale=1.0"
 
 
     body {
+
       margin: 0;
+
       padding: 20px;
+
       background: #111;
+
       color: white;
+
       font-family: Arial, sans-serif;
+
       text-align: center;
+
     }
 
 
     .contenedor {
+
       width: 100%;
+
       max-width: 600px;
+
       margin: auto;
+
     }
 
 
     h1 {
+
       margin-bottom: 8px;
+
     }
 
 
     p {
+
       color: #ccc;
+
+      line-height: 1.5;
+
     }
 
 
     button {
+
       width: 100%;
+
       padding: 15px;
+
       margin-top: 12px;
+
       border: none;
+
       border-radius: 10px;
+
       font-size: 17px;
+
       font-weight: bold;
+
       cursor: pointer;
+
     }
 
 
     #btnAbrir {
+
       background: white;
+
       color: black;
+
     }
 
 
     #btnDetener {
+
       background: #8b0000;
+
       color: white;
+
       display: none;
+
     }
 
 
     #video {
+
       width: 100%;
+
+      max-height: 70vh;
+
       margin-top: 20px;
+
       border-radius: 12px;
+
       background: black;
+
       display: none;
+
+      object-fit: cover;
+
     }
 
 
     #estado {
+
       margin-top: 20px;
+
       padding: 15px;
+
       border-radius: 10px;
+
       background: #292929;
+
       white-space: pre-line;
+
       word-break: break-word;
+
+      line-height: 1.5;
+
     }
 
 
     .codigo {
+
       margin-top: 20px;
+
       padding: 20px;
+
       background: #17351f;
+
       border: 1px solid #28663a;
+
       border-radius: 12px;
+
       display: none;
+
     }
 
 
     .codigoNumero {
+
       font-size: 26px;
+
       font-weight: bold;
+
       margin-top: 10px;
+
       word-break: break-all;
+
+    }
+
+
+    .marco {
+
+      position: relative;
+
+      width: 100%;
+
+    }
+
+
+    /*
+     * Zona visual para ayudar a colocar
+     * el código en el centro.
+     */
+
+    .guia {
+
+      position: absolute;
+
+      left: 8%;
+
+      right: 8%;
+
+      top: 40%;
+
+      height: 20%;
+
+      border: 2px solid white;
+
+      border-radius: 8px;
+
+      pointer-events: none;
+
+      display: none;
+
+    }
+
+
+    .ayuda {
+
+      margin-top: 12px;
+
+      font-size: 14px;
+
+      color: #aaa;
+
     }
 
   </style>
 
 </head>
 
+
 <body>
+
 
   <div class="contenedor">
 
-```
-<h1>📷 PIZZA'S QUEEN</h1>
+
+    <h1>
+      📷 PIZZA'S QUEEN
+    </h1>
 
 
-<p>
-  Escáner de código de barras
-</p>
+    <p>
+      Escáner de código de barras
+    </p>
 
 
-<button
-  id="btnAbrir"
-  type="button"
-  onclick="abrirCamara()"
->
-  📷 ABRIR CÁMARA
-</button>
+    <button
+      id="btnAbrir"
+      type="button"
+      onclick="abrirCamara()"
+    >
+      📷 ABRIR CÁMARA
+    </button>
 
 
-<button
-  id="btnDetener"
-  type="button"
-  onclick="detenerCamara()"
->
-  ⏹ DETENER CÁMARA
-</button>
+    <button
+      id="btnDetener"
+      type="button"
+      onclick="detenerCamara()"
+    >
+      ⏹ DETENER CÁMARA
+    </button>
 
 
-<video
-  id="video"
-  autoplay
-  muted
-  playsinline
-></video>
+    <div class="marco">
+
+      <video
+        id="video"
+        autoplay
+        muted
+        playsinline
+      ></video>
 
 
-<div id="estado">
-  Esperando para iniciar la cámara...
-</div>
+      <div
+        id="guia"
+        class="guia"
+      ></div>
+
+    </div>
 
 
-<div
-  id="resultado"
-  class="codigo"
->
+    <div
+      id="estado"
+    >
+      Esperando para iniciar la cámara...
+    </div>
 
-  <div>
-    ✅ CÓDIGO DETECTADO
+
+    <div
+      class="ayuda"
+      id="ayuda"
+      style="display:none;"
+    >
+      📦 Coloca el código de barras dentro del recuadro.
+      <br>
+      Mantén el celular quieto durante unos segundos.
+    </div>
+
+
+    <div
+      id="resultado"
+      class="codigo"
+    >
+
+      <div>
+        ✅ CÓDIGO DETECTADO
+      </div>
+
+
+      <div
+        id="codigoNumero"
+        class="codigoNumero"
+      ></div>
+
+    </div>
+
+
   </div>
 
 
-  <div
-    id="codigoNumero"
-    class="codigoNumero"
-  ></div>
-
-</div>
-```
-
-  </div>
 
 <script>
 
 
-  var stream =
+  /*
+   * CONTROL DE ZXING
+   */
+
+  var controles =
     null;
 
 
-  var lector =
-    null;
+  /*
+   * Evita procesar múltiples veces
+   * el mismo código.
+   */
 
-
-  var escaneando =
+  var codigoDetectado =
     false;
 
 
-  var codigoAnterior =
-    "";
 
+  /*
+   * Mostrar mensajes.
+   */
 
   function mostrarEstado(
     texto
@@ -216,36 +367,48 @@ content="width=device-width, initial-scale=1.0"
   }
 
 
+
+  /*
+   * ABRIR CÁMARA
+   */
+
   async function abrirCamara() {
 
     try {
 
 
+      codigoDetectado =
+        false;
+
+
       /*
-       * Limpiamos cualquier cámara
-       * anterior.
+       * Si ya existe una sesión
+       * anterior, la detenemos.
        */
 
       detenerCamara();
 
 
       mostrarEstado(
-        "📷 Solicitando permiso para utilizar la cámara..."
+        "📷 Iniciando cámara..."
       );
 
 
       /*
-       * Comprobamos que el navegador
-       * tenga acceso a getUserMedia.
+       * Verificamos que ZXing
+       * esté disponible.
        */
 
       if (
-        !navigator.mediaDevices ||
-        !navigator.mediaDevices.getUserMedia
+        typeof ZXingBrowser === "undefined"
       ) {
 
         mostrarEstado(
-          "❌ Este navegador no permite utilizar la cámara."
+
+          "❌ No se pudo cargar el lector de códigos.\n\n" +
+
+          "Verifica tu conexión a Internet y vuelve a intentar."
+
         );
 
         return;
@@ -254,26 +417,23 @@ content="width=device-width, initial-scale=1.0"
 
 
       /*
-       * ABRIMOS LA CÁMARA DIRECTAMENTE.
-       *
-       * Este método ya comprobamos que
-       * funciona correctamente en GitHub Pages.
+       * Verificamos cámara del navegador.
        */
 
-      stream =
-        await navigator.mediaDevices.getUserMedia({
+      if (
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia
+      ) {
 
-          video: {
+        mostrarEstado(
 
-            facingMode: {
-              ideal: "environment"
-            }
+          "❌ Este navegador no permite utilizar la cámara."
 
-          },
+        );
 
-          audio: false
+        return;
 
-        });
+      }
 
 
       var video =
@@ -283,34 +443,177 @@ content="width=device-width, initial-scale=1.0"
 
 
       /*
-       * Conectamos la cámara
-       * al elemento de video.
+       * Mostramos el video.
        */
-
-      video.srcObject =
-        stream;
-
-
-      video.muted =
-        true;
-
-
-      video.setAttribute(
-        "playsinline",
-        ""
-      );
-
 
       video.style.display =
         "block";
 
 
+      document.getElementById(
+        "guia"
+      ).style.display =
+        "block";
+
+
+      document.getElementById(
+        "ayuda"
+      ).style.display =
+        "block";
+
+
       /*
-       * Esperamos a que el video
-       * comience realmente.
+       * Creamos el lector especializado
+       * para navegador.
        */
 
-      await video.play();
+      var lector =
+        new ZXingBrowser.BrowserMultiFormatReader();
+
+
+      /*
+       * Configuración de cámara.
+       *
+       * environment = cámara trasera
+       * cuando el dispositivo la tenga.
+       */
+
+      var restricciones = {
+
+        video: {
+
+          facingMode: {
+            ideal: "environment"
+          },
+
+          width: {
+            ideal: 1280
+          },
+
+          height: {
+            ideal: 720
+          }
+
+        },
+
+        audio: false
+
+      };
+
+
+      mostrarEstado(
+
+        "📷 Solicitando permiso para utilizar la cámara..."
+
+      );
+
+
+      /*
+       * Iniciamos el lector.
+       *
+       * ZXing se encarga de analizar
+       * continuamente la imagen.
+       */
+
+      controles =
+        await lector.decodeFromConstraints(
+
+          restricciones,
+
+          video,
+
+          function(
+            resultado,
+            error
+          ) {
+
+
+            /*
+             * Si ya encontramos un código,
+             * ignoramos lecturas posteriores.
+             */
+
+            if (
+              codigoDetectado
+            ) {
+
+              return;
+
+            }
+
+
+            /*
+             * RESULTADO ENCONTRADO
+             */
+
+            if (
+              resultado
+            ) {
+
+
+              try {
+
+
+                var codigo =
+                  resultado
+                    .getText();
+
+
+                if (
+                  codigo
+                ) {
+
+
+                  codigo =
+                    String(
+                      codigo
+                    ).trim();
+
+
+                  if (
+                    codigo
+                  ) {
+
+
+                    codigoDetectado =
+                      true;
+
+
+                    mostrarCodigo(
+                      codigo
+                    );
+
+
+                    return;
+
+                  }
+
+                }
+
+
+              } catch (
+                errorLectura
+              ) {
+
+                console.error(
+                  "Error obteniendo código:",
+                  errorLectura
+                );
+
+              }
+
+            }
+
+
+            /*
+             * Los errores de "no encontrado"
+             * son normales mientras ZXing
+             * analiza los fotogramas.
+             */
+
+          }
+
+        );
 
 
       /*
@@ -330,52 +633,20 @@ content="width=device-width, initial-scale=1.0"
 
 
       mostrarEstado(
-        "✅ Cámara activada.\n\n" +
-        "Apunta la cámara hacia un código de barras."
+
+        "✅ CÁMARA ACTIVADA\n\n" +
+
+        "Apunta hacia el código de barras.\n\n" +
+
+        "⏳ Buscando código..."
+
       );
 
 
-      /*
-       * Comprobamos que ZXing
-       * se haya cargado.
-       */
+    } catch (
+      error
+    ) {
 
-      if (
-        typeof ZXing === "undefined"
-      ) {
-
-        mostrarEstado(
-          "⚠️ La cámara funciona, pero no se pudo cargar ZXing."
-        );
-
-        return;
-
-      }
-
-
-      /*
-       * Creamos el lector.
-       */
-
-      lector =
-        new ZXing.MultiFormatReader();
-
-
-      escaneando =
-        true;
-
-
-      /*
-       * Comenzamos a analizar
-       * la imagen del video.
-       */
-
-      escanearVideo(
-        video
-      );
-
-
-    } catch (error) {
 
       console.error(
         "Error cámara:",
@@ -385,7 +656,7 @@ content="width=device-width, initial-scale=1.0"
 
       mostrarEstado(
 
-        "❌ NO SE PUDO ACCEDER A LA CÁMARA.\n\n" +
+        "❌ NO SE PUDO INICIAR EL ESCÁNER.\n\n" +
 
         "Nombre del error: " +
         (
@@ -411,274 +682,19 @@ content="width=device-width, initial-scale=1.0"
   }
 
 
-  function escanearVideo(
-    video
-  ) {
 
-
-    if (
-      !escaneando
-    ) {
-
-      return;
-
-    }
-
-
-    if (
-      !lector
-    ) {
-
-      return;
-
-    }
-
-
-    /*
-     * Creamos un canvas oculto.
-     *
-     * Cada fotograma de la cámara
-     * será copiado al canvas.
-     */
-
-    var canvas =
-      document.createElement(
-        "canvas"
-      );
-
-
-    var contexto =
-      canvas.getContext(
-        "2d",
-        {
-          willReadFrequently: true
-        }
-      );
-
-
-    function analizar() {
-
-
-      if (
-        !escaneando
-      ) {
-
-        return;
-
-      }
-
-
-      /*
-       * Esperamos a que el video
-       * tenga una imagen disponible.
-       */
-
-      if (
-        video.readyState <
-        2
-      ) {
-
-        requestAnimationFrame(
-          analizar
-        );
-
-        return;
-
-      }
-
-
-      var ancho =
-        video.videoWidth;
-
-
-      var alto =
-        video.videoHeight;
-
-
-      if (
-        !ancho ||
-        !alto
-      ) {
-
-        requestAnimationFrame(
-          analizar
-        );
-
-        return;
-
-      }
-
-
-      /*
-       * Ajustamos el canvas
-       * al tamaño real de la cámara.
-       */
-
-      canvas.width =
-        ancho;
-
-
-      canvas.height =
-        alto;
-
-
-      /*
-       * Copiamos el fotograma.
-       */
-
-      contexto.drawImage(
-        video,
-        0,
-        0,
-        ancho,
-        alto
-      );
-
-
-      try {
-
-
-        /*
-         * Obtenemos los píxeles.
-         */
-
-        var imagen =
-          contexto.getImageData(
-            0,
-            0,
-            ancho,
-            alto
-          );
-
-
-        /*
-         * Convertimos la imagen
-         * para ZXing.
-         */
-
-        var fuente =
-          new ZXing.RGBLuminanceSource(
-            imagen.data,
-            ancho,
-            alto
-          );
-
-
-        var binario =
-          new ZXing.BinaryBitmap(
-            new ZXing.HybridBinarizer(
-              fuente
-            )
-          );
-
-
-        /*
-         * Intentamos encontrar
-         * un código.
-         */
-
-        var resultado =
-          lector.decode(
-            binario
-          );
-
-
-        if (
-          resultado
-        ) {
-
-
-          var codigo =
-            resultado.getText();
-
-
-          if (
-            codigo
-          ) {
-
-
-            codigo =
-              String(
-                codigo
-              ).trim();
-
-
-            /*
-             * Evitamos detectar
-             * repetidamente el mismo código.
-             */
-
-            if (
-              codigo &&
-              codigo !== codigoAnterior
-            ) {
-
-
-              codigoAnterior =
-                codigo;
-
-
-              /*
-               * Mostramos el código.
-               */
-
-              mostrarCodigo(
-                codigo
-              );
-
-
-              /*
-               * Cerramos la cámara.
-               */
-
-              detenerCamara();
-
-
-              return;
-
-            }
-
-          }
-
-        }
-
-
-      } catch (error) {
-
-        /*
-         * IMPORTANTE:
-         *
-         * ZXing lanza errores cuando
-         * simplemente NO encuentra un
-         * código en ese fotograma.
-         *
-         * Eso es completamente normal.
-         */
-
-      }
-
-
-      /*
-       * Continuamos analizando
-       * el siguiente fotograma.
-       */
-
-      requestAnimationFrame(
-        analizar
-      );
-
-    }
-
-
-    analizar();
-
-  }
-
+  /*
+   * MOSTRAR CÓDIGO
+   */
 
   function mostrarCodigo(
     codigo
   ) {
 
+
+    /*
+     * Mostramos el código.
+     */
 
     document
       .getElementById(
@@ -698,7 +714,7 @@ content="width=device-width, initial-scale=1.0"
 
     mostrarEstado(
 
-      "✅ Código detectado correctamente.\n\n" +
+      "✅ CÓDIGO DETECTADO CORRECTAMENTE.\n\n" +
 
       "Código: " +
       codigo +
@@ -708,6 +724,14 @@ content="width=device-width, initial-scale=1.0"
       "Regresando a PIZZA'S QUEEN..."
 
     );
+
+
+    /*
+     * Detenemos la cámara
+     * después de encontrar el código.
+     */
+
+    detenerCamara();
 
 
     /*
@@ -728,14 +752,22 @@ content="width=device-width, initial-scale=1.0"
 
 
     /*
-     * Si la cámara fue abierta
-     * directamente, no existe
-     * URL de regreso.
+     * Si abrimos GitHub directamente
+     * no existe URL de regreso.
      */
 
     if (
       !urlRegreso
     ) {
+
+      mostrarEstado(
+
+        "✅ Código detectado correctamente.\n\n" +
+
+        "Código: " +
+        codigo
+
+      );
 
       return;
 
@@ -743,8 +775,8 @@ content="width=device-width, initial-scale=1.0"
 
 
     /*
-     * Determinamos si la URL
-     * ya tiene parámetros.
+     * Determinamos si la URL ya
+     * tiene parámetros.
      */
 
     var separador =
@@ -759,8 +791,11 @@ content="width=device-width, initial-scale=1.0"
 
     var destino =
       urlRegreso +
+
       separador +
+
       "codigo=" +
+
       encodeURIComponent(
         codigo
       );
@@ -784,41 +819,48 @@ content="width=device-width, initial-scale=1.0"
   }
 
 
+
+  /*
+   * DETENER CÁMARA
+   */
+
   function detenerCamara() {
 
 
-    escaneando =
-      false;
-
-
     /*
-     * Cerramos todos los tracks
-     * de la cámara.
+     * Detenemos ZXing.
      */
 
     if (
-      stream
+      controles
     ) {
 
-      stream
-        .getTracks()
-        .forEach(
-          function(track) {
+      try {
 
-            track.stop();
+        controles.stop();
 
-          }
+      } catch (
+        error
+      ) {
+
+        console.error(
+          "Error deteniendo lector:",
+          error
         );
 
+      }
 
-      stream =
+
+      controles =
         null;
 
     }
 
 
     /*
-     * Limpiamos el video.
+     * Detenemos cualquier
+     * transmisión de cámara
+     * que haya quedado activa.
      */
 
     var video =
@@ -828,15 +870,51 @@ content="width=device-width, initial-scale=1.0"
 
 
     if (
-      video
+      video &&
+      video.srcObject
     ) {
 
-      video.pause();
+
+      try {
+
+        video
+          .srcObject
+          .getTracks()
+          .forEach(
+            function(
+              track
+            ) {
+
+              track.stop();
+
+            }
+          );
+
+      } catch (
+        error
+      ) {
+
+        console.error(
+          "Error cerrando cámara:",
+          error
+        );
+
+      }
 
 
       video.srcObject =
         null;
 
+    }
+
+
+    /*
+     * Ocultamos video y guía.
+     */
+
+    if (
+      video
+    ) {
 
       video.style.display =
         "none";
@@ -844,23 +922,31 @@ content="width=device-width, initial-scale=1.0"
     }
 
 
-    /*
-     * Eliminamos el lector.
-     */
+    var guia =
+      document.getElementById(
+        "guia"
+      );
 
-    lector =
-      null;
+
+    if (
+      guia
+    ) {
+
+      guia.style.display =
+        "none";
+
+    }
+
+
+    document.getElementById(
+      "ayuda"
+    ).style.display =
+      "none";
 
 
     /*
      * Restauramos botones.
      */
-
-    var btnDetener =
-      document.getElementById(
-        "btnDetener"
-      );
-
 
     var btnAbrir =
       document.getElementById(
@@ -868,14 +954,10 @@ content="width=device-width, initial-scale=1.0"
       );
 
 
-    if (
-      btnDetener
-    ) {
-
-      btnDetener.style.display =
-        "none";
-
-    }
+    var btnDetener =
+      document.getElementById(
+        "btnDetener"
+      );
 
 
     if (
@@ -887,10 +969,37 @@ content="width=device-width, initial-scale=1.0"
 
     }
 
+
+    if (
+      btnDetener
+    ) {
+
+      btnDetener.style.display =
+        "none";
+
+    }
+
   }
 
 
+
+  /*
+   * LIMPIAR TODO AL CERRAR
+   * O CAMBIAR DE PÁGINA.
+   */
+
+  window.addEventListener(
+    "beforeunload",
+    function() {
+
+      detenerCamara();
+
+    }
+  );
+
+
 </script>
+
 
 </body>
 
